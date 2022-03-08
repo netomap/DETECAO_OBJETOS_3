@@ -33,7 +33,7 @@ def criar_imagem(img_path):
         xc = x0 + w/2
         yc = y0 + h/2
 
-        tipo = choice([0, 1]) # [vazio, triangulo, circulo]
+        tipo = choice([0, 1]) # [vazio, circulo, triangulo]
 
         anotacao = [img_path, imgw, imgh, xc/imgw, yc/imgh, w/imgw, h/imgh, tipo]
         
