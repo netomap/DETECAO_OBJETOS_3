@@ -80,13 +80,13 @@ def collate_function(batch):
 
     return imgs_tensor, bbox_tensor, target_tensor
 
-def analisando_saida_tensores():
+def analisando_saida_tensores(inv_transformer_):
     plt.figure(figsize=(20, 4))
     n = len(imgs_tensor)
     for k, img_tensor in enumerate(imgs_tensor):
         bbox = bbox_tensor[k].detach().cpu().numpy()
         tipo = target_tensor[k].detach().cpu().numpy()
-        img_pil = inv_transformer(img_tensor)
+        img_pil = inv_transformer_(img_tensor)
         draw = ImageDraw.Draw(img_pil)
         imgw, imgh = img_pil.size
         xc, yc, w, h = bbox
@@ -105,7 +105,6 @@ if (__name__ == '__main__'):
     N_GRIDS = 5
 
     transformer = transforms.Compose([
-        transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.ToTensor(),
         transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
     ])
@@ -121,5 +120,5 @@ if (__name__ == '__main__'):
     imgs_tensor, bbox_tensor, target_tensor = next(iter(dataloader))
     print (f'{imgs_tensor.shape=}, {bbox_tensor.shape=}, {target_tensor}')
 
-    img = analisando_saida_tensores()
-    img.show()
+    #img = analisando_saida_tensores(inv_transformer)
+    #img.show()
