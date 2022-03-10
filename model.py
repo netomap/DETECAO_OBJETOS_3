@@ -62,7 +62,7 @@ class custom_model(nn.Module):
 
         return (loss_bbox + loss_target)
     
-    def detect(self, img_pil: Image, thresold=0.5):
+    def detect(self, img_pil: Image, threshold=0.5, device=torch.device('cpu')):
 
         w_original, h_original = img_pil.size
         
@@ -79,9 +79,10 @@ class custom_model(nn.Module):
                 imgs.append(self.transformer(img_croped))
                 bboxes_cells.append(bbox_celula)
         
-        imgs = torch.stack(imgs)
+        imgs = torch.stack(imgs).to(device)
 
         self.net.eval()
+        self.net.to(device)
         with torch.no_grad():
             output = self.net(imgs)
             deteccoes = output[:,:4] # detecção do objeto. no formato [xc, yc, w, h] ainda em percentual.
@@ -100,7 +101,7 @@ class custom_model(nn.Module):
             classe = classes_cells[k]
             prob = prob_classes_cells[k]
 
-            if (classe != 2 and prob >= thresold): # se não for a classe que corresponde ao último índice, ou seja, classe de imagem vazia.
+            if (classe != 2 and prob >= threshold): # se não for a classe que corresponde ao último índice, ou seja, classe de imagem vazia.
                 xc, yc, w, h = xc*cells_size, yc*cells_size, w*cells_size, h*cells_size  # formatando para valores absolutos da cells_size
                 x0, y0, x1, y1 = bboxes_cells[k]
                 
@@ -113,7 +114,7 @@ class custom_model(nn.Module):
                 x0f, y0f, x1f, y1f = x0f*w_original, y0f*h_original, x1f*w_original, y1f*h_original
                 # trazendo os valores da bbox para os valores originais.
 
-                deteccoes_final.append([[x0f, y0f, x1f, y1f], classe])  # detecção final para uma imagem que foi redimensionada
+                deteccoes_final.append([[x0f, y0f, x1f, y1f], classe, prob])  # detecção final para uma imagem que foi redimensionada
 
         return deteccoes_final
 
