@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 
 class custom_dataset(Dataset):
 
-    def __init__(self, df_path, IMG_SIZE, N_GRIDS):
+    def __init__(self, df, IMG_SIZE, N_GRIDS):
         self.n_grids = N_GRIDS
         self.img_size = IMG_SIZE
-        self.df = pd.read_csv(df_path)
+        self.df = df
     
     def __getitem__(self, i):
         # img_path,imgw,imgh,xc,yc,w,h,tipo
