@@ -99,26 +99,75 @@ def analisando_saida_tensores(inv_transformer_):
 
     return plt
 
+def calculate_iou(bbox1, bbox2):
+    # Analisa o bbox mais à esquerda
+    (bboxe, bboxd) = (bbox1, bbox2) if (bbox1[0] < bbox2[0]) else (bbox2, bbox1)
+
+    x0e, y0e, x1e, y1e = bboxe  # pegas as variáveis da esquerda apenas para facilitar a fórmula
+    x0d, y0d, x1d, y1d = bboxd  # o mesmo para as variáveis do bbox da direita.
+    
+    (y1t, y0b) = (y1e, y0d) if (y0e < y0d) else (y1d, y0e)  # analisa os elementos mais acima top ou mais abaixo bottom
+
+    inter = max(0, (x1e - x0d)) * max(0, (y1t - y0b))  # intercessão
+    union = (x1e - x0e)*(y1e - y0e) + (x1d - x0d)*(y1d - y0d) - inter  # união: somatório das duas áreas - intercessão
+
+    return inter / union
+
+def nms(deteccoes):
+    ious = []
+    for k in range(len(deteccoes)): # faça correr todas as deteccoes
+        for j in range(k+1, len(deteccoes), 1): # corra todas exceto a detecção[k]
+            bbox1, classe1, prob1 = deteccoes[k]
+            bbox2, classe2, prob2 = deteccoes[j]
+            ious.append([k, j, calculate_iou(bbox1, bbox2)if classe1 == classe2 else 0.0, prob1, prob2])
+            # se as classes são diferentes, então iou é zero logo de cara. também adicionamos as probabilidades para pegar a maior.
+            # [k, j, bbox, prob[k], prob[j]]
+    
+    ious = [[ind1, ind2, iou, prob1, prob2] for ind1, ind2, iou, prob1, prob2 in ious if iou != 0.0]
+    # retirando as detecções onde não há interceção, ou seja, iou=0.0
+    
+    indices_excluir = []
+    for ind1, ind2, iou, prob1, prob2 in ious:
+        menor_ind = ind1 if prob1 < prob2 else ind2 # pega o menor prob, pois essa bbox já não serve mais.
+        indices_excluir.append(menor_ind)
+
+    novas_deteccoes = [deteccao for k, deteccao in enumerate(deteccoes) if k not in indices_excluir]
+    
+    return novas_deteccoes
+
+def desenha(img_pil, deteccoes):
+
+    draw = ImageDraw.Draw(img_pil)
+    for k, (bbox, classe, prob) in enumerate(deteccoes):
+        cor = {0: 'red', 1: 'green'}
+        draw.rectangle(bbox, fill=None, width=2, outline=cor[classe])
+        x0, y0, x1, y1 = bbox
+        draw.text((x0, y0-10), f'{str(classe)},{str(round(prob*100))}%', fill=cor[classe])
+        draw.text((x0-10, y1-10), f'{str(k)}', fill=cor[classe])
+
+    return img_pil
+
+transformer = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+])
+
+inv_transformer = transforms.Compose([
+    transforms.Normalize(mean=(-1., -1., -1), std=(2., 2., 2.)),
+    transforms.ToPILImage()
+])
+
 if (__name__ == '__main__'):
 
-    IMG_SIZE = 200
+    IMG_SIZE = 150
     N_GRIDS = 5
 
-    transformer = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-    ])
-
-    inv_transformer = transforms.Compose([
-        transforms.Normalize(mean=(-1., -1., -1), std=(2., 2., 2.)),
-        transforms.ToPILImage()
-    ])
-
-    dataset = custom_dataset('annotations.csv', IMG_SIZE=IMG_SIZE, N_GRIDS=N_GRIDS)
+    df = pd.read_csv('annotations.csv')
+    dataset = custom_dataset(df, IMG_SIZE=IMG_SIZE, N_GRIDS=N_GRIDS)
 
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_function)
     imgs_tensor, bbox_tensor, target_tensor = next(iter(dataloader))
     print (f'{imgs_tensor.shape=}, {bbox_tensor.shape=}, {target_tensor}')
 
-    #img = analisando_saida_tensores(inv_transformer)
-    #img.show()
+    img = analisando_saida_tensores(inv_transformer)
+    img.show()

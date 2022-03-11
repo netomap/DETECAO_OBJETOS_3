@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 from utils import custom_dataset
 from torchvision import transforms
 from torch.functional import F
+import sys
+import pandas as pd
 
 class custom_model(nn.Module):
 
@@ -151,7 +153,8 @@ if (__name__ == '__main__'):
         transforms.ToPILImage()
     ])
 
-    dataset = custom_dataset('annotations.csv', IMG_SIZE=IMG_SIZE, N_GRIDS=N_GRIDS)
+    df = pd.read_csv('annotations.csv')
+    dataset = custom_dataset(df, IMG_SIZE=IMG_SIZE, N_GRIDS=N_GRIDS)
 
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_function)
     imgs_tensor, bbox_tensor, target_tensor = next(iter(dataloader))
@@ -159,6 +162,9 @@ if (__name__ == '__main__'):
     print (f'{imgs_tensor.shape=}')
 
     model = custom_model(imgs_tensor, 3, IMG_SIZE, N_GRIDS, transformer, inv_transformer)
+    print (model)
+
+    sys.exit(1)
     output = model(imgs_tensor)
     print (f'{output.shape=}')
     loss = model.calculate_loss(output, bbox_tensor, target_tensor)
