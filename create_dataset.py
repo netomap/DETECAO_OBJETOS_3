@@ -14,7 +14,7 @@ def random_color(clara=True):
     else:
         return (randint(0, 150), randint(0, 150), randint(0, 150))
 
-def criar_imagem(img_path):
+def criar_imagem(img_path, n=2):
     imgw, imgh = randint(200, 300), randint(200, 300)
     img_pil = Image.new('RGB', (imgw, imgh), color='white')
 
@@ -24,7 +24,7 @@ def criar_imagem(img_path):
         draw.line([x0, y0, x1, y1], fill=random_color(), width=1)
     
     anotacoes = []
-    for n in range(2):
+    for _ in range(n):
 
         w, h = randint(30, 60), randint(30, 60)
         x0, y0 = randint(0, imgw-w), randint(0, imgh-h)
